@@ -4,6 +4,41 @@ This guide explains what is needed to upgrade contracts when migrating over
 major releases of `cosmwasm`. Note that you can also view the
 [complete CHANGELOG](./CHANGELOG.md) to understand the differences.
 
+## 0.9 -> 0.10
+
+Integration tests:
+
+- Calls to `Api::human_address` and `Api::canonical_address` now return a pair
+  of result and gas information. Change
+
+  ```rust
+  // before
+  verifier: deps.api.canonical_address(&verifier).unwrap(),
+
+  // after
+  verifier: deps.api.canonical_address(&verifier).0.unwrap(),
+  ```
+
+  The same applies for all calls of `Querier` and `Storage`.
+
+All Tests:
+
+All usages of `mock_env` will have to remove the first argument (no need of API).
+
+```rust
+// before
+let env = mock_env(&deps.api, "creator", &coins(1000, "earth"));
+
+// after
+let env = mock_env("creator", &coins(1000, "earth"));
+```
+
+Contracts:
+
+* All code that uses `message.sender` or `contract.address` should deal with
+  `HumanAddr` not `CanonicalAddr`. Many times this means you can remove
+  a conversion step.
+
 ## 0.8 -> 0.9
 
 `dependencies`/`dev-dependencies` in `Cargo.toml`:

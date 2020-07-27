@@ -43,16 +43,16 @@ fn proper_initialization() {
     let beneficiary = HumanAddr(String::from("benefits"));
     let creator = HumanAddr(String::from("creator"));
     let expected_state = State {
-        verifier: deps.api.canonical_address(&verifier).unwrap(),
-        beneficiary: deps.api.canonical_address(&beneficiary).unwrap(),
-        funder: deps.api.canonical_address(&creator).unwrap(),
+        verifier: deps.api.canonical_address(&verifier).0.unwrap(),
+        beneficiary: deps.api.canonical_address(&beneficiary).0.unwrap(),
+        funder: deps.api.canonical_address(&creator).0.unwrap(),
     };
 
     let msg = InitMsg {
         verifier,
         beneficiary,
     };
-    let env = mock_env(&deps.api, "creator", &coins(1000, "earth"));
+    let env = mock_env("creator", &coins(1000, "earth"));
     let res: InitResponse = init(&mut deps, env, msg).unwrap();
     assert_eq!(res.messages.len(), 0);
     assert_eq!(res.log.len(), 1);
@@ -64,8 +64,8 @@ fn proper_initialization() {
         .with_storage(|store| {
             let data = store
                 .get(CONFIG_KEY)
-                .expect("error reading db")
                 .0
+                .expect("error reading db")
                 .expect("no data stored");
             from_slice(&data)
         })
@@ -84,7 +84,7 @@ fn init_and_query() {
         verifier: verifier.clone(),
         beneficiary,
     };
-    let env = mock_env(&deps.api, creator.as_str(), &coins(1000, "earth"));
+    let env = mock_env(creator.as_str(), &coins(1000, "earth"));
     let res: InitResponse = init(&mut deps, env, msg).unwrap();
     assert_eq!(0, res.messages.len());
 
@@ -111,7 +111,7 @@ fn migrate_verifier() {
         verifier: verifier.clone(),
         beneficiary,
     };
-    let env = mock_env(&deps.api, creator.as_str(), &[]);
+    let env = mock_env(creator.as_str(), &[]);
     let res: InitResponse = init(&mut deps, env, msg).unwrap();
     assert_eq!(0, res.messages.len());
 
@@ -123,7 +123,7 @@ fn migrate_verifier() {
     let msg = MigrateMsg {
         verifier: HumanAddr::from("someone else"),
     };
-    let env = mock_env(&deps.api, creator.as_str(), &[]);
+    let env = mock_env(creator.as_str(), &[]);
     let res: MigrateResponse = migrate(&mut deps, env, msg).unwrap();
     assert_eq!(0, res.messages.len());
 
@@ -159,7 +159,7 @@ fn querier_callbacks_work() {
 #[test]
 fn fails_on_bad_init() {
     let mut deps = mock_instance(WASM, &[]);
-    let env = mock_env(&deps.api, "creator", &coins(1000, "earth"));
+    let env = mock_env("creator", &coins(1000, "earth"));
     // bad init returns parse error (pass wrong type - this connection is not enforced)
     let res: InitResult = init(&mut deps, env, HandleMsg::Release {});
     match res.unwrap_err() {
@@ -182,8 +182,8 @@ fn handle_release_works() {
         beneficiary: beneficiary.clone(),
     };
     let init_amount = coins(1000, "earth");
-    let init_env = mock_env(&deps.api, creator.as_str(), &init_amount);
-    let contract_addr = deps.api.human_address(&init_env.contract.address).unwrap();
+    let init_env = mock_env(creator.as_str(), &init_amount);
+    let contract_addr = init_env.contract.address.clone();
     let init_res: InitResponse = init(&mut deps, init_env, init_msg).unwrap();
     assert_eq!(init_res.messages.len(), 0);
 
@@ -195,7 +195,7 @@ fn handle_release_works() {
     .unwrap();
 
     // beneficiary can release it
-    let handle_env = mock_env(&deps.api, verifier.as_str(), &[]);
+    let handle_env = mock_env(verifier.as_str(), &[]);
     let handle_res: HandleResponse = handle(&mut deps, handle_env, HandleMsg::Release {}).unwrap();
     assert_eq!(handle_res.messages.len(), 1);
     let msg = handle_res.messages.get(0).expect("no message");
@@ -229,8 +229,8 @@ fn handle_release_fails_for_wrong_sender() {
         beneficiary: beneficiary.clone(),
     };
     let init_amount = coins(1000, "earth");
-    let init_env = mock_env(&deps.api, creator.as_str(), &init_amount);
-    let contract_addr = deps.api.human_address(&init_env.contract.address).unwrap();
+    let init_env = mock_env(creator.as_str(), &init_amount);
+    let contract_addr = init_env.contract.address.clone();
     let init_res: InitResponse = init(&mut deps, init_env, init_msg).unwrap();
     assert_eq!(init_res.messages.len(), 0);
 
@@ -242,7 +242,7 @@ fn handle_release_fails_for_wrong_sender() {
     .unwrap();
 
     // beneficiary cannot release it
-    let handle_env = mock_env(&deps.api, beneficiary.as_str(), &[]);
+    let handle_env = mock_env(beneficiary.as_str(), &[]);
     let handle_res: HandleResult = handle(&mut deps, handle_env, HandleMsg::Release {});
     match handle_res.unwrap_err() {
         StdError::Unauthorized { .. } => {}
@@ -254,8 +254,8 @@ fn handle_release_fails_for_wrong_sender() {
         .with_storage(|store| {
             Ok(store
                 .get(CONFIG_KEY)
-                .expect("error reading db")
                 .0
+                .expect("error reading db")
                 .expect("no data stored"))
         })
         .unwrap();
@@ -263,9 +263,9 @@ fn handle_release_fails_for_wrong_sender() {
     assert_eq!(
         state,
         State {
-            verifier: deps.api.canonical_address(&verifier).unwrap(),
-            beneficiary: deps.api.canonical_address(&beneficiary).unwrap(),
-            funder: deps.api.canonical_address(&creator).unwrap(),
+            verifier: deps.api.canonical_address(&verifier).0.unwrap(),
+            beneficiary: deps.api.canonical_address(&beneficiary).0.unwrap(),
+            funder: deps.api.canonical_address(&creator).0.unwrap(),
         }
     );
 }
@@ -301,11 +301,11 @@ mod singlepass_tests {
         let mut deps = mock_instance(WASM, &[]);
 
         let (init_msg, creator) = make_init_msg();
-        let init_env = mock_env(&deps.api, creator.as_str(), &[]);
+        let init_env = mock_env(creator.as_str(), &[]);
         let init_res: InitResponse = init(&mut deps, init_env, init_msg).unwrap();
         assert_eq!(0, init_res.messages.len());
 
-        let handle_env = mock_env(&deps.api, creator.as_str(), &[]);
+        let handle_env = mock_env(creator.as_str(), &[]);
         // panic inside contract should not panic out here
         // Note: we need to use the production-call, not the testing call (which unwraps any vm error)
         let handle_res = call_handle::<_, _, _, Empty>(
@@ -321,11 +321,11 @@ mod singlepass_tests {
         let mut deps = mock_instance(WASM, &[]);
 
         let (init_msg, creator) = make_init_msg();
-        let init_env = mock_env(&deps.api, creator.as_str(), &[]);
+        let init_env = mock_env(creator.as_str(), &[]);
         let init_res: InitResponse = init(&mut deps, init_env, init_msg).unwrap();
         assert_eq!(0, init_res.messages.len());
 
-        let handle_env = mock_env(&deps.api, creator.as_str(), &[]);
+        let handle_env = mock_env(creator.as_str(), &[]);
         // Note: we need to use the production-call, not the testing call (which unwraps any vm error)
         let handle_res = call_handle::<_, _, _, Empty>(
             &mut deps,
@@ -341,11 +341,11 @@ mod singlepass_tests {
         let mut deps = mock_instance(WASM, &[]);
 
         let (init_msg, creator) = make_init_msg();
-        let init_env = mock_env(&deps.api, creator.as_str(), &[]);
+        let init_env = mock_env(creator.as_str(), &[]);
         let init_res: InitResponse = init(&mut deps, init_env, init_msg).unwrap();
         assert_eq!(0, init_res.messages.len());
 
-        let handle_env = mock_env(&deps.api, creator.as_str(), &[]);
+        let handle_env = mock_env(creator.as_str(), &[]);
         // Note: we need to use the production-call, not the testing call (which unwraps any vm error)
         let handle_res = call_handle::<_, _, _, Empty>(
             &mut deps,
@@ -361,11 +361,11 @@ mod singlepass_tests {
         let mut deps = mock_instance(WASM, &[]);
 
         let (init_msg, creator) = make_init_msg();
-        let init_env = mock_env(&deps.api, creator.as_str(), &[]);
+        let init_env = mock_env(creator.as_str(), &[]);
         let init_res: InitResponse = init(&mut deps, init_env, init_msg).unwrap();
         assert_eq!(0, init_res.messages.len());
 
-        let handle_env = mock_env(&deps.api, creator.as_str(), &[]);
+        let handle_env = mock_env(creator.as_str(), &[]);
         // Note: we need to use the production-call, not the testing call (which unwraps any vm error)
         let handle_res = call_handle::<_, _, _, Empty>(
             &mut deps,
@@ -384,11 +384,11 @@ mod singlepass_tests {
         let mut deps = mock_instance(WASM, &[]);
 
         let (init_msg, creator) = make_init_msg();
-        let init_env = mock_env(&deps.api, creator.as_str(), &[]);
+        let init_env = mock_env(creator.as_str(), &[]);
         let init_res: InitResponse = init(&mut deps, init_env, init_msg).unwrap();
         assert_eq!(0, init_res.messages.len());
 
-        let handle_env = mock_env(&deps.api, creator.as_str(), &[]);
+        let handle_env = mock_env(creator.as_str(), &[]);
         let gas_before = deps.get_gas_left();
         // Note: we need to use the production-call, not the testing call (which unwraps any vm error)
         let handle_res = call_handle::<_, _, _, Empty>(
@@ -404,7 +404,7 @@ mod singlepass_tests {
         // Gas consumtion is relatively small
         // Note: the exact gas usage depends on the Rust version used to compile WASM,
         // which we only fix when using cosmwasm-opt, not integration tests.
-        let expected = 42000; // +/- 20%
+        let expected = 35000; // +/- 20%
         assert!(gas_used > expected * 80 / 100, "Gas used: {}", gas_used);
         assert!(gas_used < expected * 120 / 100, "Gas used: {}", gas_used);
 

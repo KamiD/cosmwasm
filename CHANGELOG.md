@@ -1,5 +1,55 @@
 # CHANGELOG
 
+## 0.10.0 (unreleased)
+
+**all**
+
+- Drop support for Rust versions lower than 1.44.1.
+
+**cosmwasm-std**
+
+- Remove error helpers `generic_err`, `invalid_base64`, `invalid_utf8`,
+  `not_found`, `parse_err`, `serialize_err`, `underflow`, `unauthorized` in
+  favour of `StdError::generic_err` and friends.
+- Implement `From<&[u8; $N]> for Binary` and `From<[u8; $N]> for Binary` for all
+  `$N <= 32`.
+- Add `Context` object that can be used to build Init/Handle/Migrate response
+  via `add_log`, `add_message`, `set_data` and then convert to the proper type
+  via `into` or `try_into`. Option to simplify response construction.
+- Env uses `HumanAddr` for `message.sender` and `contract_address`
+- Remove `Api` argument from `mock_env`
+
+**cosmwasm-vm**
+
+- Remove unused cache size argument from `CosmCache`.
+- `set_gas_limit` now panics if the given gas limit exceeds the max. supported
+  value.
+- Increase the max. supported value for gas limit from 10_000_000_000 to
+  0x7FFFFFFFFFFFFFFF.
+- Add checks to `get_region` for failing early when the contract sends a Region
+  pointer to the VM that is not backed by a plausible Region. This helps
+  development of standard libraries.
+- Create dedicated `RegionValidationError` and `RegionValidationResult`.
+- `Api::human_address` and `Api::canonical_address` now return a pair of return
+  data and gas usage.
+- Remove `NextItem` in favour of a more advanced `FfiResult<T>`, which is used
+  to store the return result and the gas information consistently across all
+  APIs. `FfiResult<T>` was changed to `(Result<T, FfiError>, GasInfo)`.
+- Create error type `FfiError::InvalidUtf8` for the cases where the backend
+  sends invalid UTF-8 in places that expect strings.
+- Remove `FfiError::Other` in favour of `FfiError::UserErr` and
+  `FfiError::Unknown`.
+- The `canonicalize_address` and `humanize_address` imports now report user
+  errors to the contract.
+- Bump `cosmwasm_vm_version_2` to `cosmwasm_vm_version_3`.
+
+## 0.9.4 (2020-07-16)
+
+**cosmwasm-vm**
+
+- Add `Instance::create_gas_report` returning a gas report including the
+  original limit, the remaining gas and the internally/externally used gas.
+
 ## 0.9.3 (2020-07-08)
 
 **cosmwasm-storage**

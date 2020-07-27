@@ -16,14 +16,10 @@ mod types;
 
 pub use crate::coins::{coin, coins, has_coins, Coin};
 pub use crate::encoding::Binary;
-#[allow(deprecated)]
-pub use crate::errors::{
-    generic_err, invalid_base64, invalid_utf8, not_found, parse_err, serialize_err, unauthorized,
-    underflow, StdError, StdResult, SystemError, SystemResult,
-};
+pub use crate::errors::{StdError, StdResult, SystemError, SystemResult};
 pub use crate::init_handle::{
-    log, BankMsg, CosmosMsg, HandleResponse, HandleResult, InitResponse, InitResult, LogAttribute,
-    MigrateResponse, MigrateResult, StakingMsg, WasmMsg,
+    log, BankMsg, Context, CosmosMsg, HandleResponse, HandleResult, InitResponse, InitResult,
+    LogAttribute, MigrateResponse, MigrateResult, StakingMsg, WasmMsg,
 };
 #[cfg(feature = "iterator")]
 pub use crate::iterator::{Order, KV};
