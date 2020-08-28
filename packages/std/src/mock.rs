@@ -190,7 +190,7 @@ impl<C: DeserializeOwned> MockQuerier<C> {
     }
 }
 
-impl<C: DeserializeOwned> Querier for MockQuerier<C> {
+impl< C: DeserializeOwned> Querier for MockQuerier<C> {
     fn raw_query(&self, bin_request: &[u8]) -> QuerierResult {
         let request: QueryRequest<C> = match from_slice(bin_request) {
             Ok(v) => v,

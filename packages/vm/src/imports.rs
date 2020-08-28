@@ -35,6 +35,20 @@ const MAX_LENGTH_CANONICAL_ADDRESS: usize = 32;
 const MAX_LENGTH_HUMAN_ADDRESS: usize = 90;
 const MAX_LENGTH_QUERY_CHAIN_REQUEST: usize = 64 * KI;
 
+//display log message from inside of contract
+pub fn do_display(ctx: &mut Ctx, msg_ptr: u32) -> u32{
+    let msg = match read_region(ctx, msg_ptr, MAX_LENGTH_DB_KEY){
+        Ok(data) => data,
+        _ => {
+            println!("log analyze failed!");
+            return 0;
+        }
+    };
+    let str = String::from_utf8(msg).expect("Found invalid UTF-8");
+    println!("Logging : {}",str);
+    return 0;
+}
+
 /// Reads a storage entry from the VM's storage into Wasm memory
 pub fn do_read<S: Storage, Q: Querier>(ctx: &mut Ctx, key_ptr: u32) -> VmResult<u32> {
     let key = read_region(ctx, key_ptr, MAX_LENGTH_DB_KEY)?;

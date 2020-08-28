@@ -115,6 +115,9 @@ where
                 "query_chain" => Func::new(move |ctx: &mut Ctx, request_ptr: u32| -> VmResult<u32> {
                     do_query_chain::<S, Q>(ctx, request_ptr)
                 }),
+                "display_message" => Func::new(move |ctx: &mut Ctx, msg: u32| -> u32 {
+                    return do_display(ctx,msg);
+                }),
             },
         });
 
